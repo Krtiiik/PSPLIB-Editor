@@ -2,6 +2,8 @@ import re
 from typing import Any, Callable, Sequence, Type, Union, TextIO, Pattern
 from pathlib import Path
 
+from .instances import NonRenewableResource, ProblemInstance, Job, RenewableResource, Resource, Precedence
+
 
 def parse_psplib(source: Union[str, Path, TextIO], name: str = None):
     """
@@ -184,10 +186,12 @@ def _parse_psplib(parser: FileParser, name: str = None):
     for _ in range(job_count):
         job_id, _job_modes, job_successor_count, job_successors = \
             parser.parse_line(r"\s*(\d+)\s+(\d+)\s+(\d+)\s*(\s+\d+(?:\s+\d+)*)?\s*",
-                              (int, int, int, lambda successors_str: map(int, successors_str.split()) if successors_str else tuple()))
+                              (int, int, int, lambda successors_str: tuple(map(int, successors_str.split())) if successors_str else tuple()))
         if job_successor_count != len(job_successors):
             parser.error("Number of parsed job successors does not match the expected number of job successors")
-        precedences.append((job_id, job_successor_count, job_successors))
+
+        for successor in job_successors:
+            precedences.append((job_id, successor))
 
     # Job Resource consumptions
     divider()
@@ -201,7 +205,7 @@ def _parse_psplib(parser: FileParser, name: str = None):
     for _ in range(job_count):  # assumes single-mode jobs. Should be sum(job.num_modes for job in jobs) entries
         job_id, _job_mode, job_duration, consumptions = \
             parser.parse_line(r"\s*(\d+)\s+(\d+)\s+(\d+)\s*(\s+\d+(?:\s+\d+)*)?\s*",
-                              (int, int, int, lambda consumptions_str: map(int, consumptions_str.split()) if consumptions_str else tuple()))
+                              (int, int, int, lambda consumptions_str: tuple(map(int, consumptions_str.split())) if consumptions_str else tuple()))
         if len(consumptions) != num_resources:
             parser.error("Number of parsed job resource-consumptions does not match the expected number of resources")
         jobs.append((job_id, job_duration, consumptions))
@@ -210,8 +214,26 @@ def _parse_psplib(parser: FileParser, name: str = None):
     divider()
     parser.skip_lines(2)  # "RESOURCE AVAILABILITIES" / Resource name headers (assuming same order of resources as above)
     capacities = parser.parse_line(r"\s*(\d+(?:\s+\d+)*)?\s*",
-                                   lambda capacities_str: map(int, capacities_str.split()) if capacities_str else tuple())
+                                   lambda capacities_str: tuple(map(int, capacities_str.split())) if capacities_str else tuple())
 
-    # TODO build instance
-    instance = ...
+    def build_job(job_id, job_duration, job_consumptions) -> Job:
+        return Job(id=job_id, duration=job_duration,
+                   consumption={resource_key: consumption for resource_key, consumption in zip(resource_keys, job_consumptions)}
+                   )
+
+    def build_resource(key: str, capacity: int):
+        if 'R' in key:
+            return RenewableResource(key, capacity)
+        elif 'N' in key:
+            return NonRenewableResource(key, capacity)
+        else:
+            parser.error("Can not recognize resource type from resource key", error_type=FileParser.UnsupportedOperationError)
+
+    instance = ProblemInstance(
+        name=name,
+        horizon=horizon,
+        jobs=[build_job(*job_data) for job_data in jobs],
+        precedences=[Precedence(predecessor, successor) for predecessor, successor in precedences],
+        resources=[build_resource(resource_key, resource_capacity) for resource_key, resource_capacity in zip(resource_keys, capacities)]
+    )
     return instance
