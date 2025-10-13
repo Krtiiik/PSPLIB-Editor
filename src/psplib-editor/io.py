@@ -160,8 +160,10 @@ def _parse_psplib(parser: FileParser, name: str = None):
     nonrenewable_resource_count = parser.parse_line(pattern_resource_definition("nonrenewable", "N"), int)
     _doubly_constrained_resource_count = parser.parse_line(pattern_resource_definition("doubly constrained", "D"), int)
 
+    if project_count != 1:
+        parser.error("Only single-project instances are currently supported", error_type=FileParser.UnsupportedOperationError)
     if _doubly_constrained_resource_count > 0:
-        parser.error("Doubly-constrained resources are not currently supported")
+        parser.error("Doubly-constrained resources are not currently supported", error_type=FileParser.UnsupportedOperationError)
 
     num_resources = renewable_resource_count + nonrenewable_resource_count + _doubly_constrained_resource_count
 
