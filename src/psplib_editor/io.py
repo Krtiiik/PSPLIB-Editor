@@ -145,10 +145,10 @@ def _parse_psplib(parser: FileParser, name: str = None):
         parser.skip_lines(1)
 
     def pattern_keyvalue(key: str) -> str:
-        return "{}\s*:\*(\d+)".format(key)
+        return r"\s*{}\s*:\s*(\d+)".format(re.escape(key))
 
     def pattern_resource_definition(resource: str, type: str) -> str:
-        return "\s*-\s+{}\s*:\s*(\d+)\s+{}".format(resource, type)
+        return r"\s*-\s+{}\s*:\s*(\d+)\s+{}".format(re.escape(resource), re.escape(type))
 
     # Header with metadata (not parsed)
     divider()
