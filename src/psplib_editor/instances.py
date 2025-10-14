@@ -13,6 +13,9 @@ class Precedence:
     predecessor: T_JobId
     successor: T_JobId
 
+    def __hash__(self):
+        return hash((self.predecessor, self.successor))
+
 
 @dataclass
 class Job:
@@ -26,6 +29,9 @@ class Job:
             return self.id == other.id
         return False
 
+    def __hash__(self):
+        return hash(self.id)
+
     def __repr__(self):
         return f"{Job.__name__}({self.id.__name__}={self.id})"
 
@@ -34,15 +40,36 @@ class Job:
 class Resource:
     key: T_ResourceKey
 
+    def __eq__(self, other):
+        if isinstance(other, Resource):
+            return type(self) == type(other) \
+                and self.key == other.key
+        return False
+
+    def __hash__(self):
+        return hash(self.key)
+
 
 @dataclass
 class RenewableResource(Resource):
     capacity: int
 
+    def __eq__(self, value):
+        return super().__eq__(value)
+
+    def __hash__(self):
+        return super().__hash__()
+
 
 @dataclass
 class NonRenewableResource(Resource):
     initial_capacity: int
+
+    def __eq__(self, value):
+        return super().__eq__(value)
+
+    def __hash__(self):
+        return super().__hash__()
 
 
 @dataclass
