@@ -83,7 +83,7 @@ class FileParser:
 
     def parse_line(self,
                    pattern: Union[str, Pattern],
-                   types: Union[Any, Sequence[Union[Type, Callable[[Any], Any]]]],
+                   types: Union[Union[Type, Callable[[Any], Any]], Sequence[Union[Type, Callable[[Any], Any]]]],
                    fullmatch: bool = True,
                    ) -> Sequence[Any]:
         """
@@ -118,20 +118,20 @@ class FileParser:
         if not match:
             self.error("Pattern did not match the current line")
 
-        expected_multiple_values = isinstance(values, Sequence)
-        if not expected_multiple_values:
-            values = (values, )
+        expect_multiple_values = isinstance(types, Sequence)
+        if not expect_multiple_values:
+            types = (types, )
 
         values = match.groups()
         if len(types) != len(values):
             self.error("Number of matched values does not correspond to number of expected values")
 
-        values = []
+        values_parsed = []
         for value, type in zip(values, types):
             value_parsed = type(value)
-            values.append(value_parsed)
+            values_parsed.append(value_parsed)
 
-        return values if expected_multiple_values else values[0]
+        return values_parsed if expect_multiple_values else values_parsed[0]
 
     def error(self, *args, error_type: ValueError = ParseError):
         """Raises an error detailed with the current parsing state."""
