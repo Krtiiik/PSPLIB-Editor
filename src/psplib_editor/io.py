@@ -1,11 +1,12 @@
+import io
+from pathlib import Path
 import re
 from typing import Any, Callable, Sequence, Type, Union, TextIO, Pattern
-from pathlib import Path
 
 from .instances import NonRenewableResource, ProblemInstance, Job, RenewableResource, Resource, Precedence
 
 
-def parse_psplib(source: Union[str, Path, TextIO], name: str = None):
+def parse_psplib(source: Union[str, Path, io.TextIOBase], name: str = None):
     """
     Parses a PSPLIB instance file under the given source.
 
@@ -27,7 +28,7 @@ def parse_psplib(source: Union[str, Path, TextIO], name: str = None):
         with path.open("r", encoding="utf8") as f:
             parser.init(f)
             return _parse_psplib(parser, name)
-    elif isinstance(source, TextIO):
+    elif isinstance(source, io.TextIOBase):
         parser.init(source)
         return _parse_psplib(parser, name)
     else:
