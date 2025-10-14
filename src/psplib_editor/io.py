@@ -40,8 +40,9 @@ class FileParser:
     Allows for parsing lines using regex expressions and parsing matched values.
     """
     class FileParserError(ValueError):
-        def __init__(self, filename: str, linenum: int, *args):
-            super().__init__(f"[{filename}:{linenum}]", *args)
+        def __init__(self, filename: str, linenum: int, message):
+            message = f"[{filename}:{linenum}]: {message}"
+            super().__init__(message)
 
     class UnsupportedOperationError(FileParserError):
         """Attempted unsupported operation."""
@@ -133,9 +134,9 @@ class FileParser:
 
         return values_parsed if expect_multiple_values else values_parsed[0]
 
-    def error(self, *args, error_type: ValueError = ParseError):
+    def error(self, message, error_type: ValueError = ParseError):
         """Raises an error detailed with the current parsing state."""
-        raise error_type(self._source.name, self._linenum, *args)
+        raise error_type(self._source.name, self._linenum, message)
 
 
 def _parse_psplib(parser: FileParser, name: str = None):
