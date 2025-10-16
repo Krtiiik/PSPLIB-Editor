@@ -41,7 +41,16 @@ class FileParser:
     Allows for parsing lines using regex expressions and parsing matched values.
     """
     class FileParserError(ValueError):
+        """Base class for all file parser related errors."""
         def __init__(self, filename: str, linenum: int, message):
+            """
+            Initializes this instance.
+
+            Args:
+                filename: The name of the file being parsed.
+                linenum: The current line number in the file being parsed.
+                message: The error message.
+            """
             message = f"[{filename}:{linenum}]: {message}"
             super().__init__(message)
 
@@ -218,6 +227,7 @@ def _parse_psplib(parser: FileParser, name: str = None):
     capacities = parser.parse_line(r"\s*(\d+(?:\s+\d+)*)?\s*",
                                    lambda capacities_str: tuple(map(int, capacities_str.split())) if capacities_str else tuple())
 
+    # Build the instance
     def build_job(job_id, job_duration, job_consumptions) -> Job:
         return Job(id=job_id, duration=job_duration,
                    consumption={resource_key: consumption for resource_key, consumption in zip(resource_keys, job_consumptions)}

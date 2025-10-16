@@ -4,10 +4,10 @@ import unittest
 
 
 from psplib_editor.instances import Job, Precedence, ProblemInstance, RenewableResource
-from psplib_editor.io import parse_psplib
+from psplib_editor.parsing import parse_psplib
 
 
-class IO_PSPLIBParsing_Tests(unittest.TestCase):
+class Parsing_PSPLIBParsing_Tests(unittest.TestCase):
     instance_name = "Test"
     instance_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "j301_1.sm")
 
@@ -15,17 +15,17 @@ class IO_PSPLIBParsing_Tests(unittest.TestCase):
         return super().setUp()
 
     def test_parse_psplib_filename(self):
-        instance = parse_psplib(IO_PSPLIBParsing_Tests.instance_filename, name=IO_PSPLIBParsing_Tests.instance_name)
+        instance = parse_psplib(Parsing_PSPLIBParsing_Tests.instance_filename, name=Parsing_PSPLIBParsing_Tests.instance_name)
         self.assert_instance_validity(instance)
 
     def test_parse_psplib_path(self):
-        path = Path(IO_PSPLIBParsing_Tests.instance_filename)
-        instance = parse_psplib(path, name=IO_PSPLIBParsing_Tests.instance_name)
+        path = Path(Parsing_PSPLIBParsing_Tests.instance_filename)
+        instance = parse_psplib(path, name=Parsing_PSPLIBParsing_Tests.instance_name)
         self.assert_instance_validity(instance)
 
     def test_parse_psplib_file(self):
-        with open(IO_PSPLIBParsing_Tests.instance_filename) as f:
-            instance = parse_psplib(f, name=IO_PSPLIBParsing_Tests.instance_name)
+        with open(Parsing_PSPLIBParsing_Tests.instance_filename) as f:
+            instance = parse_psplib(f, name=Parsing_PSPLIBParsing_Tests.instance_name)
         self.assert_instance_validity(instance)
 
     def assert_instance_validity(self, instance: ProblemInstance):
@@ -111,7 +111,7 @@ class IO_PSPLIBParsing_Tests(unittest.TestCase):
             ("R 4", 12),
         ]}
 
-        self.assertEqual(IO_PSPLIBParsing_Tests.instance_name, instance.name)
+        self.assertEqual(Parsing_PSPLIBParsing_Tests.instance_name, instance.name)
         self.assertEqual(expected_horizon, instance.horizon)
 
         for job_id, job in instance.jobs_by_id.items():
