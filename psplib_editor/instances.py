@@ -1,5 +1,6 @@
+from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Collection, Dict, Mapping, TypeAlias
+from typing import Collection, Mapping, TypeAlias
 
 from .utils import hidden_field
 
@@ -40,9 +41,14 @@ class Job:
 class Resource:
     key: T_ResourceKey
 
+    @abstractmethod
+    @property
+    def type(self) -> str:
+        ...
+
     def __eq__(self, other):
         if isinstance(other, Resource):
-            return type(self) == type(other) \
+            return self.type == other.type \
                 and self.key == other.key
         return False
 
@@ -54,6 +60,10 @@ class Resource:
 class RenewableResource(Resource):
     capacity: int
 
+    @property
+    def type(self) -> str:
+        return "Renewable"
+
     def __eq__(self, value):
         return super().__eq__(value)
 
@@ -64,6 +74,10 @@ class RenewableResource(Resource):
 @dataclass
 class NonRenewableResource(Resource):
     initial_capacity: int
+
+    @property
+    def type(self) -> str:
+        return "NonRenewable"
 
     def __eq__(self, value):
         return super().__eq__(value)
