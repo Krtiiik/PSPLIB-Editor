@@ -76,7 +76,7 @@ def write_json(instance: ProblemInstance, target: Union[str, Path, io.TextIOBase
 
 
 def _write_psplib(f: io.TextIOBase, instance: ProblemInstance):
-    ...
+    raise NotImplementedError("PSPLIB writing is not implemented yet.")
 
 def _write_json(f: io.TextIOBase, instance: ProblemInstance, indent: int):
     json.dump(instance, f, cls=ProblemInstanceJSONEncoder, indent=indent)
