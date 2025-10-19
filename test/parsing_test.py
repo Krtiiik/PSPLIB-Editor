@@ -122,7 +122,7 @@ class Parsing_Tests(unittest.TestCase):
             self.assertEqual(expected_resource.capacity, actual_resource.capacity)
 
 
-class Parsing_PSPLIBParsing_Tests(Parsing_Tests):
+class Parsing_PSPLIB_Tests(Parsing_Tests):
     def test_parse_psplib_filename(self):
         instance = parse_psplib(INSTANCE_FILENAME_PSPLIB, name=INSTANCE_NAME)
         self.assert_instance_validity(instance)
@@ -138,16 +138,16 @@ class Parsing_PSPLIBParsing_Tests(Parsing_Tests):
         self.assert_instance_validity(instance)
 
 
-class Parsing_JSONParsing_Tests(Parsing_Tests):
+class Parsing_JSON_Tests(Parsing_Tests):
     def test_parse_filename(self):
         instance = parse_json(INSTANCE_FILENAME_JSON)
         self.assert_instance_validity(instance)
-    
+
     def test_parse_path(self):
         path = Path(INSTANCE_FILENAME_JSON)
         instance = parse_json(path)
         self.assert_instance_validity(instance)
-    
+
     def test_parse_file(self):
         with open(INSTANCE_FILENAME_JSON) as f:
             instance = parse_json(f)
