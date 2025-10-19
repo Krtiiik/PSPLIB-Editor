@@ -34,15 +34,15 @@ class Job:
         return hash(self.id)
 
     def __repr__(self):
-        return f"{Job.__name__}({self.id.__name__}={self.id})"
+        return f"{Job.__name__}(id={self.id})"
 
 
 @dataclass
 class Resource:
     key: T_ResourceKey
 
-    @abstractmethod
     @property
+    @abstractmethod
     def type(self) -> str:
         ...
 
@@ -143,13 +143,9 @@ class ProblemInstance:
         for job in self.jobs:
             self._jobs_by_id[job.id] = job
 
-        job_predecessors: dict[T_JobId, list[T_JobId]] = {}
-        job_successors: dict[T_JobId, list[T_JobId]] = {}
+        job_predecessors: dict[T_JobId, list[T_JobId]] = {job.id: [] for job in self.jobs}
+        job_successors: dict[T_JobId, list[T_JobId]] = {job.id: [] for job in self.jobs}
         for precedence in self.precedences:
-            if precedence.predecessor not in job_successors:
-                job_successors[precedence.predecessor] = []
-            if precedence.successor not in job_predecessors:
-                job_predecessors[precedence.successor] = []
             job_successors[precedence.predecessor].append(precedence.successor)
             job_predecessors[precedence.successor].append(precedence.predecessor)
         self._job_predecessors = job_predecessors
