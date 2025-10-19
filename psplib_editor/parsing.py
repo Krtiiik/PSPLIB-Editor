@@ -1,38 +1,19 @@
+from importlib import resources
 import io
+import os
+import json
 from pathlib import Path
 import re
 from typing import Any, Callable, Sequence, Type, Union, TextIO, Pattern
 
-from .instances import NonRenewableResource, ProblemInstance, Job, RenewableResource, Resource, Precedence
+import jsonschema
+
+from .instances import ProblemInstance, Job, Precedence, RenewableResource, NonRenewableResource
+from .resources import schemas
+from .utils import use_read_file
 
 
-def parse_psplib(source: Union[str, Path, io.TextIOBase], name: str = None):
-    """
-    Parses a PSPLIB instance file under the given source.
-
-    Args:
-        source: The source from which to parse the instance.
-            Can either be a name of the file, file path,
-            or an open file-like object to read directly from.
-        name: If given, determines the name of the parsed instance.
-
-    Returns:
-        The parsed PSPLIB instance.
-    """
-    parser = FileParser()
-
-    if isinstance(source, (str, Path)):
-        path = Path(source)
-        if not path.exists():
-            raise FileNotFoundError(f"PSPLIB file not found: {path}")
-        with path.open("r", encoding="utf8") as f:
-            parser.init(f)
-            return _parse_psplib(parser, name)
-    elif isinstance(source, io.TextIOBase):
-        parser.init(source)
-        return _parse_psplib(parser, name)
-    else:
-        raise TypeError("source must be a filename, Path, or file-like object")
+PROBLEM_INSTANCE_SCHEMA = "problem_instance.schema.json"
 
 
 class FileParser:
@@ -149,7 +130,39 @@ class FileParser:
         raise error_type(self._source.name, self._linenum, message)
 
 
-def _parse_psplib(parser: FileParser, name: str = None):
+def parse_psplib(source: Union[str, Path, io.TextIOBase], name: str = None) -> ProblemInstance:
+    """
+    Parses a PSPLIB instance file under the given source.
+
+    Args:
+        source: The source from which to parse the instance.
+            Can either be a name of the file, file path,
+            or an open file-like object to read directly from.
+        name: If given, determines the name of the parsed instance.
+
+    Returns:
+        The parsed problem instance.
+    """
+    return use_read_file(source, _parse_psplib, name)
+
+
+def parse_json(source: Union[str, Path, io.TextIOBase], schema_file: str = None) -> ProblemInstance:
+    """
+    Parses a JSON instance file under the given source.
+
+    Args:
+        source: The source from which to parse the instance.
+            Can either be a name of the file, file path,
+            or an open file-like object to read directly from.
+        schema_file: Optional path to a custom schema file. If None, the default schema is used.
+
+    Returns:
+        The parsed problem instance.
+    """
+    return use_read_file(source, _parse_json, schema_file)
+
+
+def _parse_psplib(source: io.TextIOBase, name: str = None):
     def divider():
         parser.skip_lines(1)
 
@@ -158,6 +171,9 @@ def _parse_psplib(parser: FileParser, name: str = None):
 
     def pattern_resource_definition(resource: str, type: str) -> str:
         return r"\s*-\s+{}\s*:\s*(\d+)\s+{}".format(re.escape(resource), re.escape(type))
+
+    parser = FileParser()
+    parser.init(source)
 
     # Header with metadata (not parsed)
     divider()
@@ -242,10 +258,65 @@ def _parse_psplib(parser: FileParser, name: str = None):
             parser.error("Can not recognize resource type from resource key", error_type=FileParser.UnsupportedOperationError)
 
     instance = ProblemInstance(
-        name=name,
+        name=(name if name is not None else os.path.basename(source.name)),
         horizon=horizon,
         jobs=[build_job(*job_data) for job_data in jobs],
         precedences=[Precedence(predecessor, successor) for predecessor, successor in precedences],
         resources=[build_resource(resource_key, resource_capacity) for resource_key, resource_capacity in zip(resource_keys, capacities)]
     )
     return instance
+
+
+def _parse_json(source: io.TextIOBase, schema_file: str = None) -> ProblemInstance:
+    instance_object = json.load(source)
+    schema = read_instance_schema(schema_file)
+    try:
+        jsonschema.validate(instance_object, schema)
+    except jsonschema.ValidationError as e:
+        raise ValueError(f"Given JSON does not conform to the expected schema: {e.message}") from e
+
+    jobs = []
+    precedences = []
+    for job in instance_object["Jobs"]:
+        jobs.append(Job(id=job["Id"], duration=job["Duration"], consumption=job["Resource consumption"]))
+        for successor in job["Successors"]:
+            precedences.append(Precedence(predecessor=job["Id"], successor=successor))
+
+    resources = []
+    for resource in instance_object["Resources"]:
+        if resource["Type"] == "Renewable":
+            resources.append(RenewableResource(key=resource["Key"], capacity=resource["Capacity"]))
+        elif resource["Type"] == "NonRenewable":
+            resources.append(NonRenewableResource(key=resource["Key"], initial_capacity=resource["Capacity"]))
+        else:
+            # Should be covered by schema validation, but lets not leave an unhandled case
+            raise ValueError(f"Unrecognized resource type: {resource['Type']}")
+
+    instance = ProblemInstance(
+        name=instance_object["Name"],
+        horizon=instance_object["Horizon"],
+        jobs=jobs,
+        precedences=precedences,
+        resources=resources,
+    )
+    return instance
+
+
+def read_instance_schema(schema_file: str=None) -> str:
+    """
+    Reads a JSON schema for problem instances.
+
+    Args:
+        schema_file: Optional path to a custom schema file. If None, the default schema is used.
+
+    Returns:
+        The JSON schema as a dictionary.
+    """
+    if schema_file is None:
+        schema_text = resources.read_text(schemas, PROBLEM_INSTANCE_SCHEMA)
+    else:
+        with open(schema_file, "r", encoding="utf-8") as f:
+            schema_text = f.read()
+
+    schema = json.loads(schema_text)
+    return schema
