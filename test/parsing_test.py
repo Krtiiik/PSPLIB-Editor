@@ -123,16 +123,16 @@ class Parsing_Tests(unittest.TestCase):
 
 
 class Parsing_PSPLIB_Tests(Parsing_Tests):
-    def test_parse_psplib_filename(self):
+    def test_parse_filename(self):
         instance = parse_psplib(INSTANCE_FILENAME_PSPLIB, name=INSTANCE_NAME)
         self.assert_instance_validity(instance)
 
-    def test_parse_psplib_path(self):
+    def test_parse_path(self):
         path = Path(INSTANCE_FILENAME_PSPLIB)
         instance = parse_psplib(path, name=INSTANCE_NAME)
         self.assert_instance_validity(instance)
 
-    def test_parse_psplib_file(self):
+    def test_parse_file(self):
         with open(INSTANCE_FILENAME_PSPLIB) as f:
             instance = parse_psplib(f, name=INSTANCE_NAME)
         self.assert_instance_validity(instance)
