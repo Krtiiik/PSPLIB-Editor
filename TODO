@@ -1,0 +1,2 @@
+- PSPLIB Writing. Currently, only JSON writing is supported.
+  However, for general compatibility, writing the PSPLIB format is desired.
