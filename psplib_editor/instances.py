@@ -100,6 +100,7 @@ class ProblemInstance:
     _job_predecessors: Mapping[T_JobId, Collection[T_JobId]] = hidden_field()
     _job_successors: Mapping[T_JobId, Collection[T_JobId]] = hidden_field()
     _resources_by_key: Mapping[T_ResourceKey, Resource] = hidden_field()
+    _dummy_job_ids: Collection[T_JobId] = hidden_field()
 
     def __init__(self, name: str, horizon: int,
                  jobs: Collection[Job],
@@ -135,6 +136,11 @@ class ProblemInstance:
         self._build_data_if_needed()
         return self._resources_by_key
 
+    @property
+    def dummy_job_ids(self) -> Collection[T_JobId]:
+        self._build_data_if_needed()
+        return self._dummy_job_ids
+
     def _build_data_if_needed(self):
         if self._data_built:
             return
@@ -154,5 +160,8 @@ class ProblemInstance:
         self._resources_by_key = {}
         for resource in self.resources:
             self._resources_by_key[resource.key] = resource
+
+        self._dummy_job_ids = {job.id for job in self.jobs
+                               if job.duration == 0 and all(consumption == 0 for consumption in job.consumption.values())}
 
         self._data_built = True
