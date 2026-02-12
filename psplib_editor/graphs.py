@@ -1,9 +1,9 @@
 import networkx as nx
 
-from .instances import ProblemInstance
+from .instances import ProblemInstance, T_JobId
 
 
-def build_instance_graph(instance: ProblemInstance) -> nx.DiGraph:
+def build_instance_graph(instance: ProblemInstance) -> nx.DiGraph[T_JobId]:
     """
     Build a directed graph representation of a problem instance.
     Constructs a NetworkX directed graph where nodes represent jobs and edges
